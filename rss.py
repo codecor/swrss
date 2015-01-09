@@ -49,9 +49,27 @@ def fileAccessible(filepath, mode):
 
     return True
 
-def usage():
-    print("-h\thelp\n-a+\tadd feed <feed-name>\n-U\tcreate new database\n-u\tupdate database\n-f\tfeeds\n-e+\tmail <dest-addr>\n-E+\temail creds init <sender-addr>\n")
+def cloneDB():
+    """ clone the git repository """
+    print("::cloning db")
+    filepath = confighome+"config"
 
+    # open config to get credentials for ssh 
+    with open(filepath,mode='r', encoding='utf-8') as f:
+        jconfig = json.load(f)
+        creds=jconfig[0]
+
+        # locally clone the "db"
+        cmd_full="git clone "+creds['db']['username']+"@"+creds['db']['host']+":swrss_database"
+        print("::cmd=",cmd_full)
+        retval= os.system(cmd_full)
+        if (retval==0):
+            print("::synced successfully")
+
+        print("::system returned ",retval)
+
+
+    
 def createDB():
     """ slop for creating git init directory on a remote server """
     print("::creating db")
@@ -230,10 +248,13 @@ def initEmailCreds(sender):
     filepath = confighome+"config"
     appendJson(filepath,entry)
 
+def usage():
+    print("-h\thelp\n-a+\tadd feed <feed-name>\n-U\tcreate new database\n-u\tupdate database\n-f\tfeeds\n-e+\tmail <dest-addr>\n-E+\temail creds init <sender-addr>\n-c\tclone db\n")
+
 ### main
 def main(argv):
     try:
-        opts,args = getopt.getopt(argv,"ha:Uufe:E:",["help","addfeed=","createDB","updateDB","feeds", "emailBreif", "EmailSenderInit"])
+        opts,args = getopt.getopt(argv,"ha:Uufe:E:c",["help","addfeed=","createDB","updateDB","feeds", "emailBreif", "EmailSenderInit", "CloneDB"])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -261,6 +282,9 @@ def main(argv):
         elif opt in ("-E","--email-creds-init"):
             sender_email_addr=arg
             initEmailCreds(sender_email_addr)
+            sys.exit()
+        elif opt in ("-c","--clone-db"):
+            cloneDB()
             sys.exit()
 
 if __name__ == "__main__":
